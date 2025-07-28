@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cadastro de Corredores</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #e6ffec;
+      padding: 20px;
+    }
+    h2 { text-align: center; }
+    form, .lista-cadastros {
+      max-width: 700px;
+      margin: 20px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      margin-top: 4px;
+      box-sizing: border-box;
+    }
+    .botoes {
+      margin-top: 15px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    button {
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .btn-cadastrar { background-color: #4CAF50; color: white; }
+    .btn-editar { background-color: #2196F3; color: white; }
+    .btn-excluir, .btn-limpar { background-color: #f44336; color: white; }
+    .cadastro {
+      border-bottom: 1px solid #ccc;
+      padding: 10px 0;
+    }
+    #avisoNome, #avisoCPF { font-weight: bold; margin-top: 5px; }
+    #avisoNome { color: red; }
+    #avisoCPF { color: red; }
+  </style>
+</head>
+<body>
+
+<h2>Cadastro de Corredores</h2>
+
+<form id="form">
+  <label>Nome:</label>
+  <input type="text" id="campoNome" required oninput="verificarNomeExistente()">
+  <span id="avisoNome"></span>
+
+  <label>CPF:</label>
+  <input type="text" id="cpf" required maxlength="14" oninput="formatarCPF(this)" onblur="validarCPFCampo()">
+  <span id="avisoCPF"></span>
+
+  <label>RG:</label>
+  <input type="text" id="rg" required>
+
+  <label>Fone:</label>
+  <input type="text" id="fone" required oninput="formatarTelefone(this)">
+
+  <label>Data de Nascimento:</label>
+  <input type="text" id="dataNascimento" required maxlength="10" placeholder="dd/mm/aaaa" oninput="formatarDataInput(this)">
+
+  <label>Endereço:</label>
+  <input type="text" id="rua" required>
+
+  <label>Número:</label>
+  <input type="text" id="numero" required>
+
+  <label>Bairro:</label>
+  <input type="text" id="bairro" required>
+
+  <label>CEP:</label>
+  <input type="text" id="cep" required>
+
+  <label>E-mail:</label>
+  <input type="email" id="email" required>
+
+  <label>Tamanho da Camiseta:</label>
+  <select id="camiseta" required>
+    <option value="">Selecione</option>
+    <option>P</option>
+    <option>M</option>
+    <option>G</option>
+    <option>GG</option>
+    <option>XG</option>
+  </select>
+
+  <div class="botoes">
+    <button type="submit" class="btn-cadastrar">💾 Cadastrar</button>
+    <button type="button" class="btn-limpar" onclick="limparTodos()">🧹 Limpar Todos</button>
+  </div>
+</form>
+
+<div class="lista-cadastros" id="listaCadastros"></div>
+
+<script>
+  const senhaPadrao = '1234';
+  let editando = null;
+
+  function validarCPF(cpf) {
+    cpf = cpf.replace(/[^\d]+/g,'');
+    if (cpf.length !== 11) return false;
+    if (/^(\d)\1{10}$/.test(cpf)) return false;
+    let soma = 0;
+    for (let i=0; i<9; i++) soma += parseInt(cpf.charAt(i)) * (10 - i);
+    let resto = (soma * 10) % 11;
+    if (resto >= 10) resto = 0;
+    if (resto !== parseInt(cpf.charAt(9))) return false;
+    soma = 0;
+    for (let i=0; i<10; i++) soma += parseInt(cpf.charAt(i)) * (11 - i);
+    resto = (soma * 10) % 11;
+    if (resto >= 10) resto = 0;
+    return resto === parseInt(cpf.charAt(10));
+  }
+
+  function formatarCPF(campo) {
+    let valor = campo.value.replace(/\D/g, '').slice(0, 11);
+    valor = valor.replace(/(\d{3})(\d)/, '$1.$2')
+                 .replace(/(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
+                 .replace(/(\d{3})\.(\d{3})\.(\d{3})(\d)/, '$1.$2.$3-$4');
+    campo.value = valor;
+    document.getElementById('avisoCPF').textContent = '';
+  }
+
+  function validarCPFCampo() {
+    const cpfCampo = document.getElementById('cpf');
+    const aviso = document.getElementById('avisoCPF');
+    const cpfLimpo = cpfCampo.value.replace(/\D/g, '');
+    aviso.textContent = cpfLimpo.length === 11 && !validarCPF(cpfCampo.value) ? 'CPF inválido! Corrija para continuar.' :
+                        cpfLimpo.length !== 11 ? 'CPF incompleto.' : '';
+  }
+
+  function formatarTelefone(campo) {
+    let valor = campo.value.replace(/\D/g, '').slice(0, 11);
+    if (valor.length >= 2)
+      valor = '(' + valor.slice(0, 2) + ')' + valor.slice(2);
+    if (valor.length > 9)
+      valor = valor.slice(0, 9) + '-' + valor.slice(9);
+    campo.value = valor;
+  }
+
+  function formatarDataInput(campo) {
+    let valor = campo.value.replace(/\D/g, '').slice(0, 8);
+    if (valor.length > 4) {
+      valor = valor.slice(0,2) + '/' + valor.slice(2,4) + '/' + valor.slice(4);
+    } else if (valor.length > 2) {
+      valor = valor.slice(0,2) + '/' + valor.slice(2);
+    }
+    campo.value = valor;
+  }
+
+  document.getElementById('form').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const cpfInput = document.getElementById('cpf').value;
+    const cpfLimpo = cpfInput.replace(/\D/g, '');
+    if (cpfLimpo.length !== 11 || !validarCPF(cpfInput)) {
+      document.getElementById('avisoCPF').textContent = 'CPF inválido! Corrija para continuar.';
+      return;
+    }
+
+    const pessoa = {
+      nome: document.getElementById('campoNome').value,
+      cpf: cpfInput,
+      rg: document.getElementById('rg').value,
+      fone: document.getElementById('fone').value,
+      dataNascimento: document.getElementById('dataNascimento').value,
+      rua: document.getElementById('rua').value,
+      numero: document.getElementById('numero').value,
+      bairro: document.getElementById('bairro').value,
+      cep: document.getElementById('cep').value,
+      email: document.getElementById('email').value,
+      camiseta: document.getElementById('camiseta').value
+    };
+
+    const cadastros = JSON.parse(localStorage.getItem('cadastros') || '[]');
+
+    if (editando !== null) {
+      cadastros[editando] = pessoa;
+      editando = null;
+    } else {
+      cadastros.push(pessoa);
+    }
+
+    localStorage.setItem('cadastros', JSON.stringify(cadastros));
+    this.reset();
+    document.getElementById('avisoCPF').textContent = '';
+    mostrarCadastros();
+  });
+
+  function formatarData(data) {
+    // apenas retorna o valor como está, sem formatação
+    return data;
+  }
+
+  function mostrarCadastros() {
+    const lista = document.getElementById('listaCadastros');
+    const cadastros = JSON.parse(localStorage.getItem('cadastros') || '[]');
+    lista.innerHTML = cadastros.map((p, i) => `
+      <div class="cadastro">
+        <p><strong>Nome:</strong> ${p.nome}</p>
+        <p><strong>CPF:</strong> ${p.cpf} | <strong>RG:</strong> ${p.rg}</p>
+        <p><strong>Fone:</strong> ${p.fone} | <strong>Nascimento:</strong> ${formatarData(p.dataNascimento)}</p>
+        <p><strong>Endereço:</strong> ${p.rua}, ${p.numero}, ${p.bairro} - CEP: ${p.cep}</p>
+        <p><strong>Email:</strong> ${p.email} | <strong>Camiseta:</strong> ${p.camiseta}</p>
+        <button class="btn-editar" onclick="editarCadastro(${i})">✏️ Editar</button>
+        <button class="btn-excluir" onclick="excluirCadastro(${i})">🗑️ Excluir</button>
+      </div>
+    `).join('');
+  }
+
+  function editarCadastro(i) {
+    const cadastros = JSON.parse(localStorage.getItem('cadastros') || '[]');
+    const p = cadastros[i];
+    document.getElementById('campoNome').value = p.nome;
+    document.getElementById('cpf').value = p.cpf;
+    document.getElementById('rg').value = p.rg;
+    document.getElementById('fone').value = p.fone;
+    document.getElementById('dataNascimento').value = p.dataNascimento;
+    document.getElementById('rua').value = p.rua;
+    document.getElementById('numero').value = p.numero;
+    document.getElementById('bairro').value = p.bairro;
+    document.getElementById('cep').value = p.cep;
+    document.getElementById('email').value = p.email;
+    document.getElementById('camiseta').value = p.camiseta;
+    editando = i;
+  }
+
+  function excluirCadastro(i) {
+    if (prompt("Digite a senha para excluir:") !== senhaPadrao) return;
+    const cadastros = JSON.parse(localStorage.getItem('cadastros') || '[]');
+    cadastros.splice(i, 1);
+    localStorage.setItem('cadastros', JSON.stringify(cadastros));
+    mostrarCadastros();
+  }
+
+  function limparTodos() {
+    if (prompt("Digite a senha para limpar todos:") !== senhaPadrao) return;
+    localStorage.removeItem('cadastros');
+    mostrarCadastros();
+  }
+
+  function verificarNomeExistente() {
+    const nome = document.getElementById('campoNome').value.trim().toLowerCase();
+    const aviso = document.getElementById('avisoNome');
+    const cadastros = JSON.parse(localStorage.getItem('cadastros') || '[]');
+    const existe = cadastros.some(p => p.nome.toLowerCase().includes(nome));
+    aviso.textContent = nome && existe ? "⚠️ Nome já cadastrado!" : "";
+  }
+
+  mostrarCadastros();
+</script>
+
+</body>
+</html>
